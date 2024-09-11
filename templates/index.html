@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление дроном</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+        }
+        .status, .telemetry {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+        #video-stream {
+            display: none;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Авторизация</h1>
+    <form id="login-form">
+        <input type="text" id="username" placeholder="Логин">
+        <input type="password" id="password" placeholder="Пароль">
+        <button type="submit">Войти</button>
+    </form>
+
+    <h2>Управление дроном</h2>
+    <button onclick="takeoff()">Взлет</button>
+    <button onclick="land()">Посадка</button>
+    <button onclick="startRecon()">Миссия разведки</button>
+    <button onclick="startPatrol()">Миссия патрулирования</button>
+    <button onclick="getTelemetry()">Получить телеметрию</button>
+
+    <h2>Отображение телеметрии</h2>
+    <div id="telemetry" class="telemetry">Телеметрия будет отображаться здесь</div>
+
+    <h2>Видеопоток с дрона</h2>
+    <button id="video-btn" onclick="startVideoStream()" style="display:none;">Запустить видеопоток</button>
+    <img id="video-stream" src="" alt="Видеопоток дрона" width="640" height="480">
+
+    <script>
+        let token = null;
+
+        // Авторизация пользователя и сохранение токена на сервере
+        document.getElementById("login-form").addEventListener("submit", function(event) {
+            event.preventDefault();
+
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+
+            fetch('/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username: username, password: password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.token) {
+                    token = data.token;
+                    console.log('Токен сохранен на сервере:', token);
+                    alert('Авторизация успешна!');
+                    
+                    // Показываем кнопку для запуска видеопотока
+                    document.getElementById('video-btn').style.display = 'inline';
+                } else {
+                    alert('Ошибка авторизации');
+                }
+            })
+            .catch(error => console.error('Ошибка:', error));
+        });
+
+        // Функция для взлета дрона
+        function takeoff() {
+            if (!token) {
+                alert('Сначала выполните авторизацию');
+                return;
+            }
+
+            fetch('/takeoff', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ altitude: 100 })
+            })
+            .then(response => response.json())
+            .then(data => alert(data.message))
+            .catch(error => console.error('Ошибка:', error));
+        }
+
+        // Функция для посадки дрона
+        function land() {
+            if (!token) {
+                alert('Сначала выполните авторизацию');
+                return;
+            }
+
+            fetch('/land', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ altitude: 0 })
+            })
+            .then(response => response.json())
+            .then(data => alert(data.message))
+            .catch(error => console.error('Ошибка:', error));
+        }
+
+        // Функция для начала миссии разведки
+        function startRecon() {
+            if (!token) {
+                alert('Сначала выполните авторизацию');
+                return;
+            }
+
+            fetch('/recon', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => alert(data.message))
+            .catch(error => console.error('Ошибка:', error));
+        }
+
+        // Функция для начала миссии патрулирования
+        function startPatrol() {
+            if (!token) {
+                alert('Сначала выполните авторизацию');
+                return;
+            }
+
+            fetch('/patrol', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => alert(data.message))
+            .catch(error => console.error('Ошибка:', error));
+        }
+
+        // Функция для получения телеметрии дрона через сервер
+        function getTelemetry() {
+            if (!token) {
+                alert('Сначала выполните авторизацию');
+                return;
+            }
+
+            fetch('/get_drone_telemetry', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const telemetryDiv = document.getElementById('telemetry');
+                telemetryDiv.innerHTML = '<h3>Телеметрические данные:</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            })
+            .catch(error => console.error('Ошибка получения телеметрии:', error));
+        }
+
+        // Функция для запуска видеопотока
+        function startVideoStream() {
+            if (!token) {
+                alert('Сначала выполните авторизацию');
+                return;
+            }
+
+            // Отображаем видеопоток
+            const videoStream = document.getElementById('video-stream');
+            videoStream.src = "/video_feed";
+            videoStream.style.display = 'block';
+        }
+    </script>
+
+</body>
+</html>
